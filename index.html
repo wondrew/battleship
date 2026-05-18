@@ -340,40 +340,6 @@
 
         </div>
 
-        <!-- MODAL: FIREBASE CONFIGURATION FOR INDEPENDENT HOSTING -->
-        <div id="modal-firebase-setup" class="hidden fixed inset-0 z-50 bg-[#0b132b]/90 backdrop-blur flex items-center justify-center p-4">
-            <div class="w-full max-w-lg bg-[#1c2541] border border-cyan-500 rounded-2xl p-6 space-y-4 neon-glow-cyan max-h-[90vh] overflow-y-auto">
-                <div class="text-center">
-                    <div class="w-12 h-12 mx-auto mb-2 rounded-full border border-yellow-500 flex items-center justify-center bg-yellow-950/40">
-                        <i class="ph-bold ph-plugs text-yellow-500 text-2xl animate-pulse"></i>
-                    </div>
-                    <h3 class="text-xl font-bold text-white uppercase tracking-wide">Подключение базы данных</h3>
-                    <p class="text-xs text-cyan-300/80 mt-1">Игра запущена на внешнем хостинге. Для игры с другом в онлайне требуется подключить бесплатную БД Firebase.</p>
-                </div>
-
-                <div class="text-[11px] text-cyan-300/60 bg-[#0b132b] p-3 rounded-lg space-y-1.5 border border-cyan-500/20">
-                    <div class="font-bold text-white uppercase tracking-wider">Краткая инструкция (1 минута):</div>
-                    <div>1. Перейдите на <a href="https://console.firebase.google.com" target="_blank" class="text-cyan-400 underline font-bold">console.firebase.google.com</a> и создайте бесплатный проект.</div>
-                    <div>2. Включите сервисы <b>Anonymous Authentication</b> и базу данных <b>Cloud Firestore</b> (в тестовом режиме).</div>
-                    <div>3. Добавьте веб-приложение в проект, скопируйте объект <code class="text-yellow-400">firebaseConfig</code> и вставьте его JSON-формат ниже.</div>
-                </div>
-
-                <div class="space-y-1">
-                    <label class="text-[10px] uppercase font-bold text-cyan-400">Конфигурация Firebase (JS объект или чистый JSON):</label>
-                    <textarea id="textarea-firebase-config" placeholder='{&#10;  "apiKey": "AIzaSy...",&#10;  "authDomain": "...",&#10;  "projectId": "...",&#10;  "storageBucket": "...",&#10;  "messagingSenderId": "...",&#10;  "appId": "..."&#10;}' class="w-full h-32 bg-[#0b132b] border border-cyan-500/40 rounded-lg p-2.5 text-xs text-yellow-300 font-mono focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400"></textarea>
-                </div>
-
-                <div class="flex flex-col sm:flex-row gap-2.5 pt-2">
-                    <button id="btn-skip-setup" class="flex-1 py-2 px-4 border border-cyan-500/30 hover:bg-cyan-950 text-cyan-300 font-bold rounded-lg transition-all text-xs uppercase">
-                        Демо-режим
-                    </button>
-                    <button id="btn-save-setup" class="flex-1 py-2.5 px-4 bg-cyan-600 hover:bg-cyan-500 text-white font-extrabold rounded-lg transition-all text-xs uppercase tracking-wider">
-                        Подключить БД
-                    </button>
-                </div>
-            </div>
-        </div>
-
         <!-- MODAL: GAME OVER -->
         <div id="modal-gameover" class="hidden fixed inset-0 z-50 bg-[#0b132b]/80 backdrop-blur flex items-center justify-center p-4">
             <div class="w-full max-w-md bg-[#1c2541] border border-cyan-500 rounded-2xl p-6 text-center space-y-6 neon-glow-cyan">
@@ -419,25 +385,22 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        const myPersonalFirebaseConfig = {
+            apiKey: "AIzaSyCGiIXlyXC287xdMpDmfKr2WczcDcO7CsQ",
+            authDomain: "battleship-3b505.firebaseapp.com",
+            projectId: "battleship-3b505",
+            storageBucket: "battleship-3b505.firebasestorage.app",
+            messagingSenderId: "517465541792",
+            appId: "1:517465541792:web:058fe9e227b84fc5518dc5",
+            measurementId: "G-KMLD6QZPLQ"
+        };
+        // ==========================================
+
         // Global state and constants
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-battleship';
         
-        // Attempt to load from storage or env config
-        let savedConfig = null;
-        try {
-            const raw = localStorage.getItem('custom_firebase_config');
-            if (raw) savedConfig = JSON.parse(raw);
-        } catch(e) { console.warn("Could not read saved Firebase config:", e); }
-
-        let firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : (savedConfig || {
-            apiKey: "mock-key",
-            authDomain: "mock.firebaseapp.com",
-            projectId: "mock-project",
-            storageBucket: "mock.appspot.com",
-            messagingSenderId: "mock-sender",
-            appId: "mock-app"
-        });
-
+        // Auto-detect config source (Platform Environment > Personal Config)
+        let firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : myPersonalFirebaseConfig;
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         let app = null, db = null, auth = null;
@@ -888,53 +851,16 @@
 
         document.getElementById('btn-mode-online').addEventListener('click', () => {
             playSound('click');
-            // If running on local placeholder database, trigger DB Configuration warning modal
             if (isMockDatabase) {
-                document.getElementById('modal-firebase-setup').classList.remove('hidden');
+                // If config was not replaced yet, run in simulated offline demo mode
+                activeMode = 'online';
+                screenWelcome.classList.add('hidden');
+                screenLobby.classList.remove('hidden');
+                showToast("Внимание: Настройки Firebase по умолчанию. Активирован Демо-режим.", "error");
             } else {
                 activeMode = 'online';
                 screenWelcome.classList.add('hidden');
                 screenLobby.classList.remove('hidden');
-            }
-        });
-
-        // Skip setup -> Demo Mode with local simulation
-        document.getElementById('btn-skip-setup').addEventListener('click', () => {
-            playSound('click');
-            document.getElementById('modal-firebase-setup').classList.add('hidden');
-            activeMode = 'online';
-            screenWelcome.classList.add('hidden');
-            screenLobby.classList.remove('hidden');
-            showToast("Активирован демонстрационный сетевой режим.", "info");
-        });
-
-        // Save customized Firestore setup configuration manually
-        document.getElementById('btn-save-setup').addEventListener('click', async () => {
-            playSound('click');
-            const val = document.getElementById('textarea-firebase-config').value.trim();
-            if (!val) {
-                showToast("Поле конфигурации пусто!", "error");
-                return;
-            }
-
-            try {
-                // Validate if parseable
-                const cleanJSON = JSON.parse(val.replace(/(\r\n|\n|\r)/gm, ""));
-                localStorage.setItem('custom_firebase_config', JSON.stringify(cleanJSON));
-                showToast("Успешно сохранено! Переподключаем сервер...", "success");
-                
-                document.getElementById('modal-firebase-setup').classList.add('hidden');
-                firebaseConfig = cleanJSON;
-                
-                await initializeFirebase();
-                
-                // Immediately open lobby
-                activeMode = 'online';
-                screenWelcome.classList.add('hidden');
-                screenLobby.classList.remove('hidden');
-            } catch(err) {
-                console.error(err);
-                showToast("Ошибка синтаксиса JSON! Пожалуйста, проверьте формат.", "error");
             }
         });
 
@@ -970,8 +896,9 @@
 
         async function initializeFirebase() {
             try {
-                if (firebaseConfig.apiKey === 'mock-key') {
-                    console.warn("Using placeholder Firebase configuration. Firebase functions may not be reactive.");
+                // Check if API key is still the default mock value
+                if (firebaseConfig.apiKey.includes("MOCK-API-KEY")) {
+                    console.warn("Using placeholder/mock Firebase configuration. Network operations are simulated locally.");
                     isMockDatabase = true;
                     updateDBStatusIndicator();
                     return;
@@ -995,7 +922,7 @@
                 console.error("Firebase auth/init error:", error);
                 isMockDatabase = true;
                 updateDBStatusIndicator();
-                showToast("База данных внешнего хостинга отключена. Активен режим тренировки.", "error");
+                showToast("База данных Firebase отключена. Активен локальный демо-режим.", "error");
             }
         }
 
@@ -1011,7 +938,7 @@
             }
         }
 
-        // --- MOCK DATABASE GAMEPLAY SIMULATORS FOR GITHUB PAGES DEMO ---
+        // --- MOCK DATABASE GAMEPLAY SIMULATORS FOR LOBBY DEMOS ---
         let demoInterval = null;
         function simulateDemoRoomCreation() {
             const mockCode = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -1028,7 +955,6 @@
             
             showToast("Создана демо-комната! Симулируем подключение соперника через 7 секунд...", "info");
 
-            // Mock automatic friend connection in 7 seconds
             demoInterval = setTimeout(() => {
                 showToast("Второй игрок подключился к штабу!", "success");
                 screenWaiting.classList.add('hidden');
@@ -1060,7 +986,6 @@
             showToast(`Успешный демо-вход в комнату ${code}!`, "success");
         }
 
-        // Improved URL construction against sandbox `blob:` structures
         async function createOnlineRoom() {
             if (!currentUser) {
                 showToast("Подождите, выполняется вход в сеть...", "info");
@@ -1096,7 +1021,7 @@
                 screenLobby.classList.add('hidden');
                 screenWaiting.classList.remove('hidden');
                 
-                // --- ADVANCED ROBUST URL GENERATOR AGAINST BLOB SANDBOXES ---
+                // Advanced URL generator protecting against sandboxed blob scopes
                 let finalBaseUrl = window.location.href.split('#')[0].split('?')[0];
                 
                 if (finalBaseUrl.startsWith('blob:')) {
