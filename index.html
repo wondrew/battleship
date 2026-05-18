@@ -366,8 +366,8 @@
                     <button id="btn-gameover-exit" class="flex-1 py-2.5 px-4 border border-cyan-500/40 hover:bg-cyan-950 text-cyan-300 font-bold rounded-lg transition-all text-xs uppercase">
                         В главное меню
                     </button>
-                    <button id="btn-gameover-restart" class="flex-1 py-2.5 px-4 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg transition-all text-xs uppercase">
-                        Играть снова
+                    <button id="btn-gameover-restart" class="flex-1 py-2.5 px-4 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg transition-all text-xs uppercase font-extrabold tracking-wider">
+                        Реванш!
                     </button>
                 </div>
             </div>
@@ -1118,6 +1118,36 @@
             });
         }
 
+        // --- REMATCH MATCHMAKER RESET FUNCTION (Same room reuse) ---
+        function resetForRematch() {
+            myGrid = Array(10).fill(null).map(() => Array(10).fill(0));
+            oppGrid = Array(10).fill(null).map(() => Array(10).fill(0));
+            myShips = [];
+            shipPlacementStocks = { 4: 1, 3: 2, 2: 3, 1: 4 };
+            selectedPlacementSize = null;
+            opponentReady = false;
+            myReady = false;
+            gameActive = false;
+
+            // Rebuild grids visually
+            buildGrids();
+            updateStockBadges();
+            checkReadyState();
+
+            // Reveal placement panels and ready tools
+            document.getElementById('placement-tools').classList.remove('hidden');
+            document.getElementById('ready-block').classList.remove('hidden');
+            document.getElementById('btn-ready').removeAttribute('disabled');
+            document.getElementById('btn-ready').innerHTML = `<i class="ph-bold ph-shield-check text-lg"></i> Флот готов к сражению!`;
+            document.getElementById('turn-indicator').classList.add('hidden');
+            
+            // Close any Game Over state modals
+            document.getElementById('modal-gameover').classList.add('hidden');
+            
+            addLog("[СИСТЕМА] Инициирован матч-реванш! Перераспределите силы на радаре.");
+            playSound('sonar');
+        }
+
         function handleRoomUpdate(data) {
             const isP1 = playerRole === 'player1';
             const oppRole = isP1 ? 'player2' : 'player1';
@@ -1134,6 +1164,12 @@
                 screenWaiting.classList.add('hidden');
                 screenGame.classList.remove('hidden');
                 
+                // If a rematch is triggered (ready flags and shots list are cleared on server)
+                const isRoomRematchReset = (!data.p1Ready && !data.p2Ready && data.shots.length === 0);
+                if (isRoomRematchReset && (myReady || gameActive)) {
+                    resetForRematch();
+                }
+
                 // --- FIX 1: Инициализируем сетки для первого игрока (Хоста), когда заходит оппонент ---
                 const gridMy = document.getElementById('grid-my');
                 if (gridMy && gridMy.children.length === 0) {
@@ -1350,6 +1386,12 @@
                 }
                 renderOppBoard();
             } else {
+                // --- INSTANT CLIENT-SIDE TURN LOCK ---
+                // Lock the UI instantly to prevent spam clicks while server updates database
+                isMyTurn = false;
+                document.getElementById('status-main').innerText = "ОБРАБОТКА ЗАЛПА...";
+                document.getElementById('status-sub').innerText = "Координаты переданы. Запуск торпеды...";
+                
                 await evaluateAttackOnline(r, c);
             }
         }
@@ -1828,14 +1870,36 @@
             resetToMainMenu();
         });
 
-        document.getElementById('btn-gameover-restart').addEventListener('click', () => {
+        // --- IMPROVED GAME RESET / REMATCH SYSTEM ---
+        document.getElementById('btn-gameover-restart').addEventListener('click', async () => {
             playSound('click');
             const mode = activeMode;
-            resetToMainMenu();
             if (mode === 'ai') {
+                resetToMainMenu();
                 document.getElementById('btn-mode-ai').click();
             } else {
-                document.getElementById('btn-mode-online').click();
+                if (isMockDatabase) {
+                    resetForRematch();
+                    showToast("Демо-матч перезапущен в этой же комнате!", "success");
+                } else {
+                    // Reset Firestore document room to setup/placement status, keeping the players inside!
+                    const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId);
+                    try {
+                        await updateDoc(roomRef, {
+                            status: 'placement',
+                            p1Ready: false,
+                            p2Ready: false,
+                            p1Ships: [],
+                            p2Ships: [],
+                            winner: null,
+                            shots: [],
+                            turn: 'player1' // Host begins next round
+                        });
+                    } catch (e) {
+                        console.error("Failed to reset room:", e);
+                        showToast("Не удалось запустить реванш. Проверьте соединение.", "error");
+                    }
+                }
             }
         });
     </script>
