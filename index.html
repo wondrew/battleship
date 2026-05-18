@@ -48,6 +48,12 @@
             </div>
             
             <div class="flex items-center gap-4">
+                <!-- DB Connection Status Badge -->
+                <div id="db-status-badge" class="flex items-center gap-1.5 px-2 py-1 rounded bg-red-950/80 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase">
+                    <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                    <span id="db-status-text">Офлайн-режим</span>
+                </div>
+                
                 <button id="btn-sound-toggle" class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-cyan-500/40 hover:bg-cyan-950/50 text-cyan-300 transition-all text-sm">
                     <i id="sound-icon" class="ph-bold ph-speaker-high text-lg"></i>
                     <span id="sound-text">Звук: Вкл</span>
@@ -167,7 +173,7 @@
                 </div>
             </div>
 
-            <!-- SHARE URL COMPONENT (Optimized against BLOB urls) -->
+            <!-- SHARE URL COMPONENT -->
             <div class="space-y-1.5">
                 <span class="text-[10px] uppercase tracking-widest text-cyan-400/60 font-bold block text-left">Прямая ссылка для входа</span>
                 <div class="bg-[#0b132b] border border-cyan-500/30 rounded-xl p-3 flex items-center justify-between gap-3">
@@ -184,6 +190,7 @@
             </button>
         </div>
 
+        <!-- SCREEN: THE GAMEPLAY BOARD -->
         <div id="screen-game" class="hidden w-full max-w-7xl mx-auto flex flex-col gap-6">
             
             <!-- Game Sub-header Information -->
@@ -264,31 +271,25 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start justify-center">
                 
-                <!-- MY BOARD (Left side for shots incoming / placing ships) -->
+                <!-- MY BOARD -->
                 <div class="flex flex-col items-center gap-3">
                     <div class="flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
                         <h3 class="font-bold text-sm tracking-widest text-cyan-400 uppercase">Моя акватория</h3>
                     </div>
                     
-                    <!-- Coordinate wrapping and grid -->
                     <div class="p-4 bg-[#1c2541]/60 border border-cyan-500/30 rounded-2xl shadow-lg relative select-none">
-                        <!-- Top header letters -->
                         <div class="grid grid-cols-11 gap-1 text-center text-[10px] font-bold text-cyan-400/60 mb-1 w-72 sm:w-96">
                             <div></div>
                             <div>А</div><div>Б</div><div>В</div><div>Г</div><div>Д</div><div>Е</div><div>Ж</div><div>З</div><div>И</div><div>К</div>
                         </div>
 
                         <div class="flex gap-1">
-                            <!-- Left side digits -->
                             <div class="flex flex-col justify-around text-right text-[10px] font-bold text-cyan-400/60 pr-1 h-72 sm:h-96">
                                 <div>1</div><div>2</div><div>3</div><div>4</div><div>5</div><div>6</div><div>7</div><div>8</div><div>9</div><div>10</div>
                             </div>
                             
-                            <!-- Tactical 10x10 My Grid -->
-                            <div id="grid-my" class="grid grid-cols-10 gap-0.5 bg-cyan-950/40 border border-cyan-500/20 p-1 rounded-lg h-72 w-72 sm:h-96 sm:w-96">
-                                <!-- Generated Dynamically -->
-                            </div>
+                            <div id="grid-my" class="grid grid-cols-10 gap-0.5 bg-cyan-950/40 border border-cyan-500/20 p-1 rounded-lg h-72 w-72 sm:h-96 sm:w-96"></div>
                         </div>
                     </div>
                 </div>
@@ -300,24 +301,18 @@
                         <h3 id="opponent-title" class="font-bold text-sm tracking-widest text-red-400 uppercase">Акватория противника</h3>
                     </div>
                     
-                    <!-- Coordinate wrapping and grid -->
                     <div class="p-4 bg-[#1c2541]/60 border border-red-500/10 rounded-2xl shadow-lg relative select-none">
-                        <!-- Top header letters -->
                         <div class="grid grid-cols-11 gap-1 text-center text-[10px] font-bold text-red-400/60 mb-1 w-72 sm:w-96">
                             <div></div>
                             <div>А</div><div>Б</div><div>В</div><div>Г</div><div>Д</div><div>Е</div><div>Ж</div><div>З</div><div>И</div><div>К</div>
                         </div>
 
                         <div class="flex gap-1">
-                            <!-- Left side digits -->
                             <div class="flex flex-col justify-around text-right text-[10px] font-bold text-red-400/60 pr-1 h-72 sm:h-96">
                                 <div>1</div><div>2</div><div>3</div><div>4</div><div>5</div><div>6</div><div>7</div><div>8</div><div>9</div><div>10</div>
                             </div>
                             
-                            <!-- Tactical 10x10 Opp Grid -->
-                            <div id="grid-opponent" class="grid grid-cols-10 gap-0.5 bg-red-950/20 border border-red-500/10 p-1 rounded-lg h-72 w-72 sm:h-96 sm:w-96">
-                                <!-- Generated Dynamically -->
-                            </div>
+                            <div id="grid-opponent" class="grid grid-cols-10 gap-0.5 bg-red-950/20 border border-red-500/10 p-1 rounded-lg h-72 w-72 sm:h-96 sm:w-96"></div>
                         </div>
                     </div>
                 </div>
@@ -345,6 +340,41 @@
 
         </div>
 
+        <!-- MODAL: FIREBASE CONFIGURATION FOR INDEPENDENT HOSTING -->
+        <div id="modal-firebase-setup" class="hidden fixed inset-0 z-50 bg-[#0b132b]/90 backdrop-blur flex items-center justify-center p-4">
+            <div class="w-full max-w-lg bg-[#1c2541] border border-cyan-500 rounded-2xl p-6 space-y-4 neon-glow-cyan max-h-[90vh] overflow-y-auto">
+                <div class="text-center">
+                    <div class="w-12 h-12 mx-auto mb-2 rounded-full border border-yellow-500 flex items-center justify-center bg-yellow-950/40">
+                        <i class="ph-bold ph-plugs text-yellow-500 text-2xl animate-pulse"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white uppercase tracking-wide">Подключение базы данных</h3>
+                    <p class="text-xs text-cyan-300/80 mt-1">Игра запущена на внешнем хостинге. Для игры с другом в онлайне требуется подключить бесплатную БД Firebase.</p>
+                </div>
+
+                <div class="text-[11px] text-cyan-300/60 bg-[#0b132b] p-3 rounded-lg space-y-1.5 border border-cyan-500/20">
+                    <div class="font-bold text-white uppercase tracking-wider">Краткая инструкция (1 минута):</div>
+                    <div>1. Перейдите на <a href="https://console.firebase.google.com" target="_blank" class="text-cyan-400 underline font-bold">console.firebase.google.com</a> и создайте бесплатный проект.</div>
+                    <div>2. Включите сервисы <b>Anonymous Authentication</b> и базу данных <b>Cloud Firestore</b> (в тестовом режиме).</div>
+                    <div>3. Добавьте веб-приложение в проект, скопируйте объект <code class="text-yellow-400">firebaseConfig</code> и вставьте его JSON-формат ниже.</div>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-[10px] uppercase font-bold text-cyan-400">Конфигурация Firebase (JS объект или чистый JSON):</label>
+                    <textarea id="textarea-firebase-config" placeholder='{&#10;  "apiKey": "AIzaSy...",&#10;  "authDomain": "...",&#10;  "projectId": "...",&#10;  "storageBucket": "...",&#10;  "messagingSenderId": "...",&#10;  "appId": "..."&#10;}' class="w-full h-32 bg-[#0b132b] border border-cyan-500/40 rounded-lg p-2.5 text-xs text-yellow-300 font-mono focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400"></textarea>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-2.5 pt-2">
+                    <button id="btn-skip-setup" class="flex-1 py-2 px-4 border border-cyan-500/30 hover:bg-cyan-950 text-cyan-300 font-bold rounded-lg transition-all text-xs uppercase">
+                        Демо-режим
+                    </button>
+                    <button id="btn-save-setup" class="flex-1 py-2.5 px-4 bg-cyan-600 hover:bg-cyan-500 text-white font-extrabold rounded-lg transition-all text-xs uppercase tracking-wider">
+                        Подключить БД
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: GAME OVER -->
         <div id="modal-gameover" class="hidden fixed inset-0 z-50 bg-[#0b132b]/80 backdrop-blur flex items-center justify-center p-4">
             <div class="w-full max-w-md bg-[#1c2541] border border-cyan-500 rounded-2xl p-6 text-center space-y-6 neon-glow-cyan">
                 <div>
@@ -391,18 +421,28 @@
 
         // Global state and constants
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-battleship';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+        
+        // Attempt to load from storage or env config
+        let savedConfig = null;
+        try {
+            const raw = localStorage.getItem('custom_firebase_config');
+            if (raw) savedConfig = JSON.parse(raw);
+        } catch(e) { console.warn("Could not read saved Firebase config:", e); }
+
+        let firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : (savedConfig || {
             apiKey: "mock-key",
             authDomain: "mock.firebaseapp.com",
             projectId: "mock-project",
             storageBucket: "mock.appspot.com",
             messagingSenderId: "mock-sender",
             appId: "mock-app"
-        };
+        });
+
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-        let app, db, auth;
+        let app = null, db = null, auth = null;
         let currentUser = null;
+        let isMockDatabase = true;
 
         // Sound Engine Setup (Tone.js wrapper)
         let soundsEnabled = true;
@@ -848,9 +888,54 @@
 
         document.getElementById('btn-mode-online').addEventListener('click', () => {
             playSound('click');
+            // If running on local placeholder database, trigger DB Configuration warning modal
+            if (isMockDatabase) {
+                document.getElementById('modal-firebase-setup').classList.remove('hidden');
+            } else {
+                activeMode = 'online';
+                screenWelcome.classList.add('hidden');
+                screenLobby.classList.remove('hidden');
+            }
+        });
+
+        // Skip setup -> Demo Mode with local simulation
+        document.getElementById('btn-skip-setup').addEventListener('click', () => {
+            playSound('click');
+            document.getElementById('modal-firebase-setup').classList.add('hidden');
             activeMode = 'online';
             screenWelcome.classList.add('hidden');
             screenLobby.classList.remove('hidden');
+            showToast("Активирован демонстрационный сетевой режим.", "info");
+        });
+
+        // Save customized Firestore setup configuration manually
+        document.getElementById('btn-save-setup').addEventListener('click', async () => {
+            playSound('click');
+            const val = document.getElementById('textarea-firebase-config').value.trim();
+            if (!val) {
+                showToast("Поле конфигурации пусто!", "error");
+                return;
+            }
+
+            try {
+                // Validate if parseable
+                const cleanJSON = JSON.parse(val.replace(/(\r\n|\n|\r)/gm, ""));
+                localStorage.setItem('custom_firebase_config', JSON.stringify(cleanJSON));
+                showToast("Успешно сохранено! Переподключаем сервер...", "success");
+                
+                document.getElementById('modal-firebase-setup').classList.add('hidden');
+                firebaseConfig = cleanJSON;
+                
+                await initializeFirebase();
+                
+                // Immediately open lobby
+                activeMode = 'online';
+                screenWelcome.classList.add('hidden');
+                screenLobby.classList.remove('hidden');
+            } catch(err) {
+                console.error(err);
+                showToast("Ошибка синтаксиса JSON! Пожалуйста, проверьте формат.", "error");
+            }
         });
 
         document.getElementById('btn-lobby-back').addEventListener('click', () => {
@@ -862,14 +947,22 @@
 
         document.getElementById('btn-create-room').addEventListener('click', async () => {
             playSound('click');
-            await createOnlineRoom();
+            if (isMockDatabase) {
+                simulateDemoRoomCreation();
+            } else {
+                await createOnlineRoom();
+            }
         });
 
         document.getElementById('btn-join-room').addEventListener('click', () => {
             playSound('click');
             const code = document.getElementById('input-room-code').value.trim().toUpperCase();
             if (code) {
-                joinRoom(code);
+                if (isMockDatabase) {
+                    simulateDemoRoomJoining(code);
+                } else {
+                    joinRoom(code);
+                }
             } else {
                 showToast("Пожалуйста, введите код комнаты!", "error");
             }
@@ -879,22 +972,92 @@
             try {
                 if (firebaseConfig.apiKey === 'mock-key') {
                     console.warn("Using placeholder Firebase configuration. Firebase functions may not be reactive.");
+                    isMockDatabase = true;
+                    updateDBStatusIndicator();
                     return;
                 }
+                
                 app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
 
+                // Safe network login using token or anonymous auth
                 if (initialAuthToken) {
                     currentUser = (await signInWithCustomToken(auth, initialAuthToken)).user;
                 } else {
                     currentUser = (await signInAnonymously(auth)).user;
                 }
-                console.log("Authenticated as:", currentUser.uid);
+                
+                isMockDatabase = false;
+                updateDBStatusIndicator();
+                console.log("Authenticated with custom Database as:", currentUser.uid);
             } catch (error) {
                 console.error("Firebase auth/init error:", error);
-                showToast("Ошибка авторизации. Проверьте соединение с интернетом.", "error");
+                isMockDatabase = true;
+                updateDBStatusIndicator();
+                showToast("База данных внешнего хостинга отключена. Активен режим тренировки.", "error");
             }
+        }
+
+        function updateDBStatusIndicator() {
+            const badge = document.getElementById('db-status-badge');
+            const text = document.getElementById('db-status-text');
+            if (isMockDatabase) {
+                badge.className = "flex items-center gap-1.5 px-2 py-1 rounded bg-amber-950/80 border border-amber-500/30 text-amber-400 text-[10px] font-bold uppercase";
+                text.innerText = "Офлайн / Демо";
+            } else {
+                badge.className = "flex items-center gap-1.5 px-2 py-1 rounded bg-emerald-950/80 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold uppercase";
+                text.innerText = "Сеть: Подключено";
+            }
+        }
+
+        // --- MOCK DATABASE GAMEPLAY SIMULATORS FOR GITHUB PAGES DEMO ---
+        let demoInterval = null;
+        function simulateDemoRoomCreation() {
+            const mockCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+            currentRoomId = mockCode;
+            playerRole = 'player1';
+
+            window.location.hash = `#room-${mockCode}`;
+            screenLobby.classList.add('hidden');
+            screenWaiting.classList.remove('hidden');
+
+            const currentUrl = window.location.href.split('#')[0];
+            document.getElementById('share-url-text').innerText = `${currentUrl}#room-${mockCode}`;
+            document.getElementById('waiting-room-code').innerText = mockCode;
+            
+            showToast("Создана демо-комната! Симулируем подключение соперника через 7 секунд...", "info");
+
+            // Mock automatic friend connection in 7 seconds
+            demoInterval = setTimeout(() => {
+                showToast("Второй игрок подключился к штабу!", "success");
+                screenWaiting.classList.add('hidden');
+                screenGame.classList.remove('hidden');
+                
+                buildGrids();
+                updateStockBadges();
+                checkReadyState();
+
+                document.getElementById('opponent-title').innerText = `Флот соперника: Друг (Симулятор)`;
+                document.getElementById('status-sub').innerText = "Друг зашел в комнату. Завершите размещение ваших кораблей.";
+            }, 7000);
+        }
+
+        function simulateDemoRoomJoining(code) {
+            currentRoomId = code;
+            playerRole = 'player2';
+
+            window.location.hash = `#room-${code}`;
+            screenLobby.classList.add('hidden');
+            screenGame.classList.remove('hidden');
+
+            buildGrids();
+            updateStockBadges();
+            checkReadyState();
+
+            document.getElementById('opponent-title').innerText = `Флот соперника: Хост (Симулятор)`;
+            document.getElementById('status-sub').innerText = "Успешный вход! Расставьте флот для начала симуляции боя.";
+            showToast(`Успешный демо-вход в комнату ${code}!`, "success");
         }
 
         // Improved URL construction against sandbox `blob:` structures
@@ -936,17 +1099,13 @@
                 // --- ADVANCED ROBUST URL GENERATOR AGAINST BLOB SANDBOXES ---
                 let finalBaseUrl = window.location.href.split('#')[0].split('?')[0];
                 
-                // If it's a blob URL (sandbox), try pulling from parent origins if available
                 if (finalBaseUrl.startsWith('blob:')) {
-                    // Extract the HTTP URL contained within the blob (if compiled like blob:https://...)
                     const match = finalBaseUrl.match(/blob:(https?:\/\/[^\s]+)/);
                     if (match && match[1]) {
                         finalBaseUrl = match[1];
                     } else if (window.location.ancestorOrigins && window.location.ancestorOrigins.length > 0) {
-                        // Use iframe parent origin
                         finalBaseUrl = window.location.ancestorOrigins[0];
                     } else {
-                        // Clean legacy fallback: remove "blob:" string directly
                         finalBaseUrl = finalBaseUrl.replace(/^blob:/, '');
                     }
                 }
@@ -1150,6 +1309,22 @@
                 opponentReady = true;
                 aiPlaceShips();
                 startGameAI();
+            } else if (isMockDatabase) {
+                // Mock online game transition
+                opponentReady = true;
+                setTimeout(() => {
+                    gameActive = true;
+                    document.getElementById('placement-tools').classList.add('hidden');
+                    document.getElementById('ready-block').classList.add('hidden');
+                    document.getElementById('opponent-container').classList.remove('opacity-50', 'opacity-30', 'pointer-events-none');
+                    document.getElementById('turn-indicator').classList.remove('hidden');
+                    
+                    isMyTurn = true;
+                    document.getElementById('status-main').innerText = "ВАШ ХОД!";
+                    document.getElementById('status-sub').innerText = "Сделайте выстрел по вражескому радару друга!";
+                    
+                    addLog("[СИСТЕМА] Бой начался! Обе флотилии полностью укомплектованы.");
+                }, 1000);
             } else {
                 const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId);
                 const isP1 = playerRole === 'player1';
@@ -1198,6 +1373,47 @@
 
             if (activeMode === 'ai') {
                 evaluateAttackAI(r, c);
+            } else if (isMockDatabase) {
+                // Simulation of hit or miss
+                const isHit = Math.random() < 0.3; // 30% chance for mock hit
+                oppGrid[r][c] = isHit ? 3 : 2;
+                if (isHit) {
+                    playSound('hit');
+                    addLog(`Попадание в ${LETTERS[c]}${r + 1}!`, 'text-emerald-400');
+                    // Check simulated game win randomly for fun
+                    if (oppGrid.flat().filter(cell => cell === 3).length >= 10) {
+                        gameActive = false;
+                        showGameOverModal(true);
+                    }
+                } else {
+                    playSound('miss');
+                    addLog(`Промах на ${LETTERS[c]}${r + 1}.`, 'text-cyan-500/60');
+                    // Friend shoots back after 1.5 seconds
+                    isMyTurn = false;
+                    document.getElementById('status-main').innerText = "ХОД ПРОТИВНИКА";
+                    document.getElementById('status-sub').innerText = "Друг целится на радаре...";
+                    
+                    setTimeout(() => {
+                        const tr = Math.floor(Math.random() * 10);
+                        const tc = Math.floor(Math.random() * 10);
+                        const isFriendHit = Math.random() < 0.4;
+                        
+                        myGrid[tr][tc] = isFriendHit ? 3 : 2;
+                        if (isFriendHit) {
+                            playSound('hit');
+                            addLog(`Друг попал по вашему кораблю в ${LETTERS[tc]}${tr + 1}!`, 'text-red-400');
+                        } else {
+                            playSound('miss');
+                            addLog(`Друг промахнулся по координате ${LETTERS[tc]}${tr + 1}.`, 'text-slate-400');
+                        }
+                        
+                        isMyTurn = true;
+                        document.getElementById('status-main').innerText = "ВАШ ХОД!";
+                        document.getElementById('status-sub').innerText = "Сделайте выстрел по вражескому радару!";
+                        renderMyBoard();
+                    }, 1500);
+                }
+                renderOppBoard();
             } else {
                 await evaluateAttackOnline(r, c);
             }
@@ -1582,11 +1798,13 @@
 
         document.getElementById('btn-cancel-waiting').addEventListener('click', () => {
             playSound('click');
+            if (demoInterval) clearTimeout(demoInterval);
             resetToMainMenu();
         });
 
         document.getElementById('btn-surrender').addEventListener('click', () => {
             playSound('click');
+            if (demoInterval) clearTimeout(demoInterval);
             resetToMainMenu();
         });
 
@@ -1643,7 +1861,7 @@
             let hits = 0;
             let totalLosses = 0;
 
-            if (activeMode === 'ai') {
+            if (activeMode === 'ai' || isMockDatabase) {
                 hits = oppGrid.flat().filter(cell => cell === 3).length;
                 totalLosses = myShips.filter(s => s.sunk).length;
             } else {
