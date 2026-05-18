@@ -302,6 +302,13 @@
                     </div>
                     
                     <div class="p-4 bg-[#1c2541]/60 border border-red-500/10 rounded-2xl shadow-lg relative select-none">
+                        <!-- Tactically locking the opponent board visually when it's not our turn -->
+                        <div id="opponent-turn-overlay" class="hidden absolute inset-0 bg-[#0b132b]/75 backdrop-blur-[2px] rounded-2xl flex flex-col items-center justify-center z-10 text-center p-4 select-none">
+                            <i class="ph-bold ph-hourglass text-amber-400 text-3xl animate-bounce mb-2"></i>
+                            <div class="text-xs font-bold text-amber-300 uppercase tracking-widest">Ход противника</div>
+                            <div class="text-[10px] text-cyan-300/60 mt-1">Ожидайте ответного залпа...</div>
+                        </div>
+
                         <div class="grid grid-cols-11 gap-1 text-center text-[10px] font-bold text-red-400/60 mb-1 w-72 sm:w-96">
                             <div></div>
                             <div>А</div><div>Б</div><div>В</div><div>Г</div><div>Д</div><div>Е</div><div>Ж</div><div>З</div><div>И</div><div>К</div>
@@ -944,6 +951,7 @@
             const mockCode = Math.random().toString(36).substring(2, 8).toUpperCase();
             currentRoomId = mockCode;
             playerRole = 'player1';
+            activeMode = 'online';
 
             window.location.hash = `#room-${mockCode}`;
             screenLobby.classList.add('hidden');
@@ -972,6 +980,7 @@
         function simulateDemoRoomJoining(code) {
             currentRoomId = code;
             playerRole = 'player2';
+            activeMode = 'online';
 
             window.location.hash = `#room-${code}`;
             screenLobby.classList.add('hidden');
@@ -992,6 +1001,7 @@
                 return;
             }
 
+            activeMode = 'online';
             const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
             currentRoomId = roomId;
             playerRole = 'player1';
@@ -1054,6 +1064,7 @@
                 return;
             }
 
+            activeMode = 'online'; // Ensure activeMode is set for online battles when joining via direct URL hash
             const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
             getDoc(roomRef).then(async (roomSnap) => {
                 if (!roomSnap.exists()) {
@@ -1144,6 +1155,14 @@
             // Close any Game Over state modals
             document.getElementById('modal-gameover').classList.add('hidden');
             
+            // Clean turn overlay
+            const turnOverlay = document.getElementById('opponent-turn-overlay');
+            if (turnOverlay) turnOverlay.classList.add('hidden');
+            
+            const opponentContainer = document.getElementById('opponent-container');
+            opponentContainer.classList.remove('opacity-100');
+            opponentContainer.classList.add('opacity-50', 'pointer-events-none');
+            
             addLog("[СИСТЕМА] Инициирован матч-реванш! Перераспределите силы на радаре.");
             playSound('sonar');
         }
@@ -1178,6 +1197,14 @@
                     checkReadyState();
                 }
 
+                // Hide turn overlays during placement phase
+                const turnOverlay = document.getElementById('opponent-turn-overlay');
+                if (turnOverlay) turnOverlay.classList.add('hidden');
+
+                const opponentContainer = document.getElementById('opponent-container');
+                opponentContainer.classList.remove('opacity-100');
+                opponentContainer.classList.add('opacity-50', 'pointer-events-none');
+
                 let subMsg = "Разместите ваш флот.";
                 if (opponentReady) {
                     subMsg += ` ${oppName} уже готов к сражению!`;
@@ -1191,12 +1218,13 @@
                 gameActive = true;
                 document.getElementById('placement-tools').classList.add('hidden');
                 document.getElementById('ready-block').classList.add('hidden');
-                document.getElementById('opponent-container').classList.remove('opacity-50', 'opacity-30', 'pointer-events-none');
                 document.getElementById('turn-indicator').classList.remove('hidden');
 
                 isMyTurn = data.turn === playerRole;
                 const turnDot = document.getElementById('turn-dot');
                 const turnText = document.getElementById('turn-text');
+                const opponentContainer = document.getElementById('opponent-container');
+                const turnOverlay = document.getElementById('opponent-turn-overlay');
                 
                 if (isMyTurn) {
                     document.getElementById('status-main').innerText = "ВАШ ХОД!";
@@ -1204,12 +1232,22 @@
                     turnDot.className = "w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse";
                     turnText.innerText = "Ваш черед";
                     turnText.className = "text-xs font-bold text-cyan-300";
+
+                    // Allow interactions on your turn
+                    opponentContainer.classList.remove('opacity-50', 'pointer-events-none');
+                    opponentContainer.classList.add('opacity-100');
+                    if (turnOverlay) turnOverlay.classList.add('hidden');
                 } else {
                     document.getElementById('status-main').innerText = "ХОД ПРОТИВНИКА";
                     document.getElementById('status-sub').innerText = `${oppName} готовит очередной залп по вашим позициям...`;
                     turnDot.className = "w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse";
                     turnText.innerText = "Ожидание залпа";
                     turnText.className = "text-xs font-bold text-amber-300";
+
+                    // Lock and dim opponent board, showing the permanent turn overlay
+                    opponentContainer.classList.remove('opacity-100');
+                    opponentContainer.classList.add('opacity-50', 'pointer-events-none');
+                    if (turnOverlay) turnOverlay.classList.remove('hidden');
                 }
 
                 reconstructBoardFromShots(data.shots);
@@ -1292,7 +1330,7 @@
                     document.getElementById('status-main').innerText = "ВАШ ХОД!";
                     document.getElementById('status-sub').innerText = "Сделайте выстрел по вражескому радару друга!";
                     
-                    addLog("[СИСТЕМА] Бой начался! Обе флотилии полностью укомплектованы.");
+                    addLog("[СИСТЕМА] Бои начался! Обе флотилии полностью укомплектованы.");
                 }, 1000);
             } else {
                 const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId);
@@ -1361,6 +1399,13 @@
                     addLog(`Промах на ${LETTERS[c]}${r + 1}.`, 'text-cyan-500/60');
                     // Friend shoots back after 1.5 seconds
                     isMyTurn = false;
+                    
+                    const opponentContainer = document.getElementById('opponent-container');
+                    const turnOverlay = document.getElementById('opponent-turn-overlay');
+                    opponentContainer.classList.remove('opacity-100');
+                    opponentContainer.classList.add('opacity-50', 'pointer-events-none');
+                    if (turnOverlay) turnOverlay.classList.remove('hidden');
+
                     document.getElementById('status-main').innerText = "ХОД ПРОТИВНИКА";
                     document.getElementById('status-sub').innerText = "Друг целится на радаре...";
                     
@@ -1381,14 +1426,26 @@
                         isMyTurn = true;
                         document.getElementById('status-main').innerText = "ВАШ ХОД!";
                         document.getElementById('status-sub').innerText = "Сделайте выстрел по вражескому радару!";
+                        
+                        opponentContainer.classList.remove('opacity-50', 'pointer-events-none');
+                        opponentContainer.classList.add('opacity-100');
+                        if (turnOverlay) turnOverlay.classList.add('hidden');
+                        
                         renderMyBoard();
                     }, 1500);
                 }
                 renderOppBoard();
             } else {
                 // --- INSTANT CLIENT-SIDE TURN LOCK ---
-                // Lock the UI instantly to prevent spam clicks while server updates database
                 isMyTurn = false;
+                
+                const opponentContainer = document.getElementById('opponent-container');
+                const turnOverlay = document.getElementById('opponent-turn-overlay');
+                
+                opponentContainer.classList.remove('opacity-100');
+                opponentContainer.classList.add('opacity-50', 'pointer-events-none');
+                if (turnOverlay) turnOverlay.classList.remove('hidden');
+
                 document.getElementById('status-main').innerText = "ОБРАБОТКА ЗАЛПА...";
                 document.getElementById('status-sub').innerText = "Координаты переданы. Запуск торпеды...";
                 
@@ -1534,18 +1591,29 @@
         function updateStatusAI() {
             const turnDot = document.getElementById('turn-dot');
             const turnText = document.getElementById('turn-text');
+            const opponentContainer = document.getElementById('opponent-container');
+            const turnOverlay = document.getElementById('opponent-turn-overlay');
+
             if (isMyTurn) {
                 document.getElementById('status-main').innerText = "ВАШ ХОД!";
                 document.getElementById('status-sub').innerText = "Произведите выстрел по вражескому радару!";
                 turnDot.className = "w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse";
                 turnText.innerText = "Ваш черед";
                 turnText.className = "text-xs font-bold text-cyan-300";
+
+                opponentContainer.classList.remove('opacity-50', 'pointer-events-none');
+                opponentContainer.classList.add('opacity-100');
+                if (turnOverlay) turnOverlay.classList.add('hidden');
             } else {
                 document.getElementById('status-main').innerText = "ХОД ИИ";
                 document.getElementById('status-sub').innerText = "Штабной ИИ рассчитывает траекторию удара...";
                 turnDot.className = "w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse";
                 turnText.innerText = "Атака ИИ";
                 turnText.className = "text-xs font-bold text-amber-300";
+
+                opponentContainer.classList.remove('opacity-100');
+                opponentContainer.classList.add('opacity-50', 'pointer-events-none');
+                if (turnOverlay) turnOverlay.classList.remove('hidden');
             }
         }
 
