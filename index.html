@@ -1134,6 +1134,14 @@
                 screenWaiting.classList.add('hidden');
                 screenGame.classList.remove('hidden');
                 
+                // --- FIX 1: Инициализируем сетки для первого игрока (Хоста), когда заходит оппонент ---
+                const gridMy = document.getElementById('grid-my');
+                if (gridMy && gridMy.children.length === 0) {
+                    buildGrids();
+                    updateStockBadges();
+                    checkReadyState();
+                }
+
                 let subMsg = "Разместите ваш флот.";
                 if (opponentReady) {
                     subMsg += ` ${oppName} уже готов к сражению!`;
@@ -1257,10 +1265,12 @@
                 const updates = {};
                 if (isP1) {
                     updates.p1Ready = true;
-                    updates.p1Ships = myShips;
+                    // --- FIX 2: Сериализуем массив кораблей в строку JSON перед отправкой в Firestore ---
+                    updates.p1Ships = JSON.stringify(myShips);
                 } else {
                     updates.p2Ready = true;
-                    updates.p2Ships = myShips;
+                    // --- FIX 2: Сериализуем массив кораблей в строку JSON перед отправкой в Firestore ---
+                    updates.p2Ships = JSON.stringify(myShips);
                 }
 
                 try {
@@ -1351,7 +1361,10 @@
                 const data = snap.data();
 
                 const oppRole = playerRole === 'player1' ? 'player2' : 'player1';
-                const oppShips = oppRole === 'player1' ? data.p1Ships : data.p2Ships;
+                const oppShipsRaw = oppRole === 'player1' ? data.p1Ships : data.p2Ships;
+                
+                // --- FIX 2: Декодируем флот соперника из строки JSON обратно в массив ---
+                const oppShips = typeof oppShipsRaw === 'string' ? JSON.parse(oppShipsRaw) : (oppShipsRaw || []);
 
                 let hit = false;
                 for (const ship of oppShips) {
